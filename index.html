@@ -1,0 +1,146 @@
+<html>
+	<head>
+		<title>Dynamic Pagination</title>
+		<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+
+		<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+		<script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+		<style>
+			table#datatable td {
+				border: 1px solid #333;
+				padding: 5px;
+			}
+
+			table#datatable {
+				border-collapse: collapse;
+				width: 100%;
+			}
+		</style>
+	</head>
+	<body>
+		
+		<div class="container-fluid">
+			
+			<div class="container">
+				
+				<div class="row">
+					
+					<p id="total_page"></p>
+					<p id="page_next"></p>
+					<p id="page_previous"></p>
+
+					<table id="datatable">
+					</table>
+
+					<nav aria-label="Page navigation text-center">
+						<ul class="pagination" id="pagin"></ul>
+					</nav>
+					
+				</div>
+				
+			</div>
+			
+		</div>
+	
+		
+		<script>
+			
+			$(document).ready(function(){
+		
+				//const axios = require('axios');
+				let table, 
+					page_records, 
+					page_next, 
+					page_previous, 
+					page_length = 10, 
+					page_id = 1;
+				
+
+				function get_data(page_id){
+					console.log(page_id);
+					axios.get('https://swapi.co/api/planets/?page='+ page_id)
+					.then( response => {
+
+						page_records = response.data.count;
+						$('#total_page').text(page_records);
+						page_next = response.data.next;
+						$('#page_next').text(page_next);
+						page_previous = response.data.previous;
+						$('#page_previous').text(page_previous);
+
+						console.log(response.data.results);
+						$('#datatable').empty();
+						response.data.results.map( data => {
+							table = '<tr>';
+							table += '<td>'+ data.name +'</td>';
+							table += '<td>'+ data.url +'</td>';
+							table += '<td>'+ data.gravity +'</td>';
+							table += '<td>'+ data.climate +'</td>';
+							table += '</tr>';
+							$('#datatable').append(table);
+						});
+
+					})
+					.catch( error => {
+						console.log(error);
+					})
+					.finally(() => {
+						$('#pagin').empty();
+						pagination(page_id, page_records, page_length);
+						let url = new URL(window.location.href);
+						//console.log(url.searchParams.get("page"));
+						
+						
+						//Onclick get new data
+						$('#pagin a').one('click', function(){
+							if($(this).attr('data-id')){
+								page_id = $(this).attr('data-id');
+								get_data(page_id);
+								console.log(page_id, 'working...');
+							}
+						});
+					});
+				}
+
+				get_data(page_id);
+
+				function pagination(page_id, total_page, length){
+					
+					//Previous
+					$('#pagin').append('<li class="" id="previous_page"><a href="#" data-id="'+ (+page_id - 1) +'">Previous</a></li>');
+					
+					//First
+					$('#pagin').append('<li class=""><a href="#" data-id="1">First</a></li>');
+					
+					//Calculate Total pages
+					let page_count = Math.ceil(total_page / length);
+					
+					//Append pages tabs
+					for(let i = 1; i <= page_count; i++){
+						
+						$('#pagin').append('<li class=""><a href="#" data-id="'+ i +'">'+ i +'</a></li>');
+						
+					}
+					
+					//Last
+					$('#pagin').append('<li><a href="#" id="last_page" data-id="'+ page_count +'">Last</a></li>');
+					
+					//Next
+					$('#pagin').append('<li><a href="#" id="next_page" data-id="'+ (+page_id + 1) +'">Next</a></li>');
+					
+					//When first time page load make first two button disabled
+					if(page_id === 1){
+						$('#pagin li:nth-child(1)').addClass('disabled').attr('disabled', 'true');
+						$('#pagin li:nth-child(2)').addClass('disabled').attr('disabled', 'true');
+					} else {
+						$('#pagin li:nth-child(1)').removeClass('disabled').attr('disabled', 'false');
+						$('#pagin li:nth-child(2)').removeClass('disabled').attr('disabled', 'false');
+					}
+				}
+
+			});
+			
+		</script>
+		
+	</body>
+</html>
